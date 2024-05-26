@@ -1,5 +1,5 @@
 import configparser
-import re
+import hashlib
 import os
 import requests
 from bs4 import BeautifulSoup
@@ -22,14 +22,13 @@ def fetch_text(url):
 
 def sanitize_filename(url):
     """
-    Sanitizes the given URL to create a valid filename by removing any characters
-    that are not alphanumeric, hyphen, dot, or space.
+    Sanitizes the given URL to create a valid and shorter filename by hashing the URL.
     Args:
         url (str): The URL to sanitize.
     Returns:
         str: The sanitized filename.
     """
-    return re.sub(r"[^\w\-\. ]", "", url)
+    return hashlib.md5(url.encode()).hexdigest()
 
 
 def get_output_folder():
