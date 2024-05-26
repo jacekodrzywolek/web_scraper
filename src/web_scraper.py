@@ -1,9 +1,8 @@
-import re
+import hashlib
+import configparser
 import os
 import requests
 from bs4 import BeautifulSoup
-import hashlib
-import configparser
 
 
 def fetch_text(url):
@@ -29,8 +28,7 @@ def sanitize_filename(url):
     Returns:
         str: The sanitized filename.
     """
-    url_hash = hashlib.md5(url.encode()).hexdigest()
-    return url_hash
+    return hashlib.md5(url.encode()).hexdigest()
 
 
 def get_output_folder():
@@ -41,8 +39,8 @@ def get_output_folder():
     """
     config = configparser.ConfigParser()
     config.read("config/config.ini")
-    create_folder_if_not_exists(config["path_settings"]["results_folder"])
-    return config["path_settings"]["results_folder"]
+    create_folder_if_not_exists(config["settings"]["results_folder"])
+    return config["settings"]["results_folder"]
 
 
 def create_folder_if_not_exists(folder):

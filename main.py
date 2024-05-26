@@ -1,4 +1,3 @@
-import difflib
 from datetime import datetime
 import os
 import configparser
@@ -7,7 +6,7 @@ from src.web_scraper import fetch_text, sanitize_filename, get_output_folder
 results_folder = get_output_folder()
 config = configparser.ConfigParser()
 config.read("config/config.ini")
-is_testing = config["testing"].getboolean("is_testing")
+is_testing = config["settings"].getboolean("is_testing")
 
 
 def clean_text(text_lines):
