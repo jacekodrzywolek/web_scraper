@@ -1,8 +1,9 @@
-import configparser
-import hashlib
+import re
 import os
 import requests
 from bs4 import BeautifulSoup
+import hashlib
+import configparser
 
 
 def fetch_text(url):
@@ -28,7 +29,8 @@ def sanitize_filename(url):
     Returns:
         str: The sanitized filename.
     """
-    return hashlib.md5(url.encode()).hexdigest()
+    url_hash = hashlib.md5(url.encode()).hexdigest()
+    return url_hash
 
 
 def get_output_folder():

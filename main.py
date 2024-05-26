@@ -1,52 +1,71 @@
-import difflib
 from datetime import datetime
 import os
-from src.web_scaper import fetch_text, sanitize_filename, get_output_folder
+import configparser
+from src.web_scraper import fetch_text, sanitize_filename, get_output_folder
 
 results_folder = get_output_folder()
+config = configparser.ConfigParser()
+config.read("config/config.ini")
+is_testing = config["testing"].getboolean("is_testing")
+
+
+def remove_empty_lines(text_lines):
+    # Remove all empty lines
+    return [line for line in text_lines if line.strip()]
+
+
+def write_differences(file, original, compare):
+    file.write("Differences between the original and comparison files:\n\n")
+    for line_count, (orig_line, comp_line) in enumerate(zip(original, compare), start=1):
+        if orig_line != comp_line:
+            file.write("---------------------------------------------------------\n")
+            file.write(f"Original ({line_count}): {orig_line}\n")
+            file.write(f"Compare ({line_count}): {comp_line}\n")
+            file.write(f"Difference: -{orig_line}+{comp_line}\n")
+            file.write("---------------------------------------------------------\n")
+
+
+def save_raw_text(is_saving_raw, original_lines, compare_lines):
+    if is_saving_raw:
+        with open(os.path.join(results_folder, "original_raw.txt"), "w", encoding="utf-8") as file:
+            file.write("\n".join(original_lines))
+        with open(os.path.join(results_folder, "compare_raw.txt"), "w", encoding="utf-8") as file:
+            file.write("\n".join(compare_lines))
 
 
 def main():
     """
     Main function of the program.
     """
-    url1 = input("Enter the URL for the original website: ")
-    url2 = input("Enter the URL for the website to compare: ")
+    is_saving_raw = config["settings"].getboolean("is_saving_raw")
 
-    text1 = fetch_text(url1)
-    text2 = fetch_text(url2)
+    if is_testing:
+        url1 = "https://docs.python.org/3.8/library/stdtypes.html#dict"
+        url2 = "https://docs.python.org/3.9/library/stdtypes.html#dict"
+    else:
+        url1 = input("Enter the URL for the original website: ")
+        url2 = input("Enter the URL for the website to compare: ")
 
-    differ = difflib.Differ()
-    diff = list(differ.compare(text1.splitlines(), text2.splitlines()))
+    text1 = fetch_text(url1).splitlines()
+    text2 = fetch_text(url2).splitlines()
+
+    text1 = remove_empty_lines(text1)
+    text2 = remove_empty_lines(text2)
+
+    # Ensure that both texts have the same number of lines by padding the shorter one
+    while len(text1) < len(text2):
+        text1.append("")
+    while len(text2) < len(text1):
+        text2.append("")
+
+    # Save raw text if needed
+    save_raw_text(is_saving_raw, text1, text2)
 
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    filename = f"{timestamp}_{sanitize_filename(url1)}_differences.txt"
+    filename = f"{sanitize_filename(url1)}_vs_{sanitize_filename(url2)}_{timestamp}.txt"
 
     with open(os.path.join(results_folder, filename), "w", encoding="utf-8") as file:
-        file.write(f"Differences between '{url1}' and '{url2}':\n\n")
-        original_line_num = 0
-        compare_line_num = 0
-        differences_found = False
-        for line in diff:
-            if line.startswith("- "):
-                differences_found = True
-                original_line_num += 1
-                file.write("---------------------------------------------------------\n")
-                file.write(f"Original ({original_line_num}): {line[2:]}\n")
-            elif line.startswith("+ "):
-                differences_found = True
-                compare_line_num += 1
-                file.write(f"Compare ({compare_line_num}): {line[2:]}\n")
-                original_text = line[2:]
-                compare_text = line[2:]
-                differences = list(difflib.ndiff([original_text], [compare_text]))
-                for diff_line in differences:
-                    if diff_line.startswith("? "):
-                        file.write(f"Difference: {diff_line[2:]}\n")
-                file.write("---------------------------------------------------------\n")
-
-        if not differences_found:
-            file.write("No differences found between the webpages.\n")
+        write_differences(file, text1, text2)
 
     print(f"The differences have been saved to '{filename}'.")
 
