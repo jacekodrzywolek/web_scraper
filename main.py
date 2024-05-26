@@ -10,22 +10,17 @@ config.read("config/config.ini")
 is_testing = config["testing"].getboolean("is_testing")
 
 
-def remove_empty_lines_and_whitespace(text_lines):
-    # Remove all empty lines and lines that are only whitespace
+def clean_text(text_lines):
+    # Remove all empty lines and lines that are only whitespace, and strip each line
     return [line.strip() for line in text_lines if line.strip()]
 
 
-def write_differences(file, original, compare):
-    file.write("Differences between the original and comparison files:\n\n")
-    line_count = 1
-    for orig_line, comp_line in zip(original, compare):
-        if orig_line != comp_line:
-            file.write("---------------------------------------------------------\n")
-            file.write(f"Original ({line_count}): {orig_line}\n")
-            file.write(f"Compare ({line_count}): {comp_line}\n")
-            file.write(f"Difference: -{orig_line}+{comp_line}\n")
-            file.write("---------------------------------------------------------\n")
-        line_count += 1
+def write_differences(file, unmatched_lines):
+    file.write("Unmatched lines from the original file:\n\n")
+    for line in unmatched_lines:
+        file.write("---------------------------------------------------------\n")
+        file.write(f"{line}\n")
+        file.write("---------------------------------------------------------\n")
 
 
 def save_raw_text(is_saving_raw, original_lines, compare_lines):
@@ -52,23 +47,19 @@ def main():
     text1 = fetch_text(url1).splitlines()
     text2 = fetch_text(url2).splitlines()
 
-    text1 = remove_empty_lines_and_whitespace(text1)
-    text2 = remove_empty_lines_and_whitespace(text2)
-
-    # Ensure that both texts have the same number of lines by padding the shorter one
-    while len(text1) < len(text2):
-        text1.append("")
-    while len(text2) < len(text1):
-        text2.append("")
+    text1 = clean_text(text1)
+    text2 = clean_text(text2)
 
     # Save raw text if needed
     save_raw_text(is_saving_raw, text1, text2)
+
+    unmatched_lines = [line for line in text1 if line not in text2]
 
     timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     filename = f"{sanitize_filename(url1)}_vs_{sanitize_filename(url2)}_{timestamp}.txt"
 
     with open(os.path.join(results_folder, filename), "w", encoding="utf-8") as file:
-        write_differences(file, text1, text2)
+        write_differences(file, unmatched_lines)
 
     print(f"The differences have been saved to '{filename}'.")
 
