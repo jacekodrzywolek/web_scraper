@@ -1,3 +1,4 @@
+import difflib
 from datetime import datetime
 import os
 import configparser
@@ -9,20 +10,22 @@ config.read("config/config.ini")
 is_testing = config["testing"].getboolean("is_testing")
 
 
-def remove_empty_lines(text_lines):
-    # Remove all empty lines
-    return [line for line in text_lines if line.strip()]
+def remove_empty_lines_and_whitespace(text_lines):
+    # Remove all empty lines and lines that are only whitespace
+    return [line.strip() for line in text_lines if line.strip()]
 
 
 def write_differences(file, original, compare):
     file.write("Differences between the original and comparison files:\n\n")
-    for line_count, (orig_line, comp_line) in enumerate(zip(original, compare), start=1):
+    line_count = 1
+    for orig_line, comp_line in zip(original, compare):
         if orig_line != comp_line:
             file.write("---------------------------------------------------------\n")
             file.write(f"Original ({line_count}): {orig_line}\n")
             file.write(f"Compare ({line_count}): {comp_line}\n")
             file.write(f"Difference: -{orig_line}+{comp_line}\n")
             file.write("---------------------------------------------------------\n")
+        line_count += 1
 
 
 def save_raw_text(is_saving_raw, original_lines, compare_lines):
@@ -49,8 +52,8 @@ def main():
     text1 = fetch_text(url1).splitlines()
     text2 = fetch_text(url2).splitlines()
 
-    text1 = remove_empty_lines(text1)
-    text2 = remove_empty_lines(text2)
+    text1 = remove_empty_lines_and_whitespace(text1)
+    text2 = remove_empty_lines_and_whitespace(text2)
 
     # Ensure that both texts have the same number of lines by padding the shorter one
     while len(text1) < len(text2):
