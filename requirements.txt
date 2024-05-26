@@ -1,0 +1,15 @@
+astroid==3.2.2
+beautifulsoup4==4.12.3
+certifi==2024.2.2
+charset-normalizer==3.3.2
+colorama==0.4.6
+dill==0.3.8
+idna==3.7
+isort==5.13.2
+mccabe==0.7.0
+platformdirs==4.2.2
+pylint==3.2.2
+requests==2.32.2
+soupsieve==2.5
+tomlkit==0.12.5
+urllib3==2.2.1
