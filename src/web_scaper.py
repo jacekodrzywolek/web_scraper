@@ -1,49 +1,54 @@
-import difflib
+import configparser
 import re
+import os
 import requests
 from bs4 import BeautifulSoup
 
 
 def fetch_text(url):
-    # Send a GET request to the specified URL
+    """
+    Fetches the text content of a webpage.
+    Args:
+        url (str): The URL of the webpage to fetch.
+    Returns:
+        str: The text content of the webpage, or an error message if the webpage couldn't be fetched.
+    """
     response = requests.get(url)
-    # Check if the request was successful
-    if response.status_code == 200:
-        # Parse the content using BeautifulSoup
-        soup = BeautifulSoup(response.text, "html.parser")
-        # Extract text from the parsed HTML (modify as needed to target specific elements)
-        return soup.get_text()
-    else:
+    if response.status_code != 200:
         return "Error fetching webpage."
+    soup = BeautifulSoup(response.text, "html.parser")
+    return soup.get_text()
 
 
 def sanitize_filename(url):
-    """Sanitize the URL to be used as a valid filename"""
-    return re.sub(r"[^\w\-\. ]", "", url)  # Replace disallowed characters with underscores
+    """
+    Sanitizes the given URL to create a valid filename by removing any characters
+    that are not alphanumeric, hyphen, dot, or space.
+    Args:
+        url (str): The URL to sanitize.
+    Returns:
+        str: The sanitized filename.
+    """
+    return re.sub(r"[^\w\-\. ]", "", url)
 
 
-# Take URLs input from the user
-url1 = input("Enter the URL for the original website: ")
-url2 = input("Enter the URL for the website to compare: ")
+def get_output_folder():
+    """
+    Returns the output folder path from the config file.
+    Returns:
+        str: The output folder path.
+    """
+    config = configparser.ConfigParser()
+    config.read("config/config.ini")
+    create_folder_if_not_exists(config["path_settings"]["results_folder"])
+    return config["path_settings"]["results_folder"]
 
-# Fetch text from both websites
-text1 = fetch_text(url1)
-text2 = fetch_text(url2)
 
-# Compare the texts and generate a diff
-differ = difflib.Differ()
-diff = list(differ.compare(text1.splitlines(), text2.splitlines()))
-
-# Create a sanitized filename from the original URL
-filename = sanitize_filename(url1) + "_differences.txt"
-
-# Create and write the differences to a text file
-with open(filename, "w") as file:
-    file.write(f"Differences between '{url1}' and '{url2}':\n\n")
-    for line in diff:
-        if line.startswith("-"):
-            file.write("Original: " + line[2:] + "\n")
-        elif line.startswith("+"):
-            file.write("Compare: " + line[2:] + "\n")
-
-print(f"The differences have been saved to '{filename}'.")
+def create_folder_if_not_exists(folder):
+    """
+    Creates the specified folder if it doesn't already exist.
+    Args:
+        folder (str): The folder path to create.
+    """
+    if not os.path.exists(folder):
+        os.makedirs(folder)
